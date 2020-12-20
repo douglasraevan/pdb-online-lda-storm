@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>{{ title }}</title>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js'></script>
+  <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1"
+      crossorigin="anonymous"
+    />
+  
+</head>
+
+<body>
+  <nav class="navbar bg-success">
+    <div class="container my-2">
+      <span class="navbar-brand mb-0 h1 text-white">Online Machine Learning using Apache Storm</span>
+      <p class="text-end text-white mt-auto mb-auto">
+        Latest update: <span id="updated-date">...</span>
+      </p>
+    </div>
+  </nav>
+  <div class = "container">
+    <center>
+      <h2 class = "mt-4 mb-4">{{ title }}</h2>
+      <p class="text-center mt-auto mb-auto">
+        Total tweet : <span id="total-tweet">...</span>
+      </p>
+    </center>
+    <center>
+    <canvas id="chart" width="600" height="400"></canvas>
+  </div>
+  <footer class="bg-success text-left text-lg-start">
+    <!-- Copyright -->
+    <div class="text-center p-3 text-white">
+      Made by PDB Team 5
+    </div>
+    <!-- Copyright -->
+    </footer>
+    <script>
+      var source = new EventSource('/stream');
+
+      source.onmessage = function (event) {
+
+        updateDate();
+
+        covid = event.data.split(",")[0].split(":")[1];
+        humor = event.data.split(",")[1].split(":")[1];
+        selebriti = event.data.split(",")[2].split(":")[1];
+        pemerintah = event.data.split(",")[3].split(":")[1];
+        curhat = event.data.split(",")[4].split(":")[1].split("}")[0];
+
+        total_tweet = parseInt(covid) + parseInt(humor) + parseInt(selebriti) + parseInt(pemerintah) + parseInt(curhat);
+
+        const totalTweetDOM = document.querySelector("#total-tweet");
+        totalTweetDOM.innerHTML = total_tweet;
+        
+        
+
+        // bar chart data
+        var barData = {
+          labels : ["covid","selebriti","pemerintah","humor","curhat"],
+
+          datasets : [{
+              fillColor: "#FFFFFF",
+              strokeColor: "#6E9AC9",
+              pointColor: "rgba(151,187,205,1)",
+              data : [covid,selebriti,pemerintah,humor,curhat]
+            }
+          ]
+        }
+        // get bar chart canvas
+        var mychart = document.getElementById("chart").getContext("2d");
+
+        steps = 5
+        max = Math.max(covid,humor,selebriti,pemerintah,curhat) + 10
+
+        // draw bar chart
+        new Chart(mychart).Bar(barData, {
+            scaleOverride: true,
+            scaleSteps: steps,
+            scaleStepWidth: Math.ceil(max / steps),
+            scaleStartValue: 0,
+            scaleShowVerticalLines: true,
+            scaleShowGridLines : true,
+            barShowStroke : true,
+            scaleShowLabels: true,
+            noData: {
+              text: "Mohon tunggu, sedang memuat data...",
+            },
+          }
+        );
+
+      };
+    </script>
+    <script>
+    function updateDate() {
+        const dateDom = document.querySelector("#updated-date");
+        const currentDate = new Date().toLocaleString();
+        dateDom.innerHTML = currentDate;
+      }
+    </script>
+  </center>
+</body>
+</html>
