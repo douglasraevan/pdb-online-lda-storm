@@ -1,5 +1,11 @@
 package gr.ntua.olda.spouts;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -29,6 +35,7 @@ public class TwitterSampleSpout extends BaseRichSpout {
     String _oauthAccessToken = LocalConfig.get("twitter.dev.oauth_access_token");
     String _oauthAccessSecret = LocalConfig.get("twitter.dev.oauth_access_secret");
 
+    private String[] _keywords;
 
     public TwitterSampleSpout(String username, String pwd) {
         _username = username;
@@ -39,6 +46,7 @@ public class TwitterSampleSpout extends BaseRichSpout {
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         queue = new LinkedBlockingQueue<Status>(1000);
         _collector = collector;
+
         StatusListener listener = new StatusListener() {
 
             @Override
@@ -82,11 +90,37 @@ public class TwitterSampleSpout extends BaseRichSpout {
         // Filter
         FilterQuery filter = new FilterQuery();
         filter.language("in");
-        filter.track("covid", "curhat", "pemerintah", "humor", "seleb");
+        try {
+            loadKeywords(LocalConfig.get("file.lda.keywords.path"));
+            filter.track(_keywords);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
 
         _twitterStream = fact.getInstance();
         _twitterStream.addListener(listener);
         _twitterStream.filter(filter);
+    }
+
+    private void loadKeywords(String path) throws IOException {
+        InputStream is = TwitterSampleSpout.class.getClassLoader().getResourceAsStream(path);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+
+        List<String> keywordsList = new ArrayList<String> ();
+
+        String line;
+        while ((line = reader.readLine()) != null) {
+            keywordsList.add(line.trim());
+        }
+
+        try {
+            reader.close();
+        } catch (IllegalStateException ex) {
+            // ... :/
+        }
+
+        this._keywords = keywordsList.stream().toArray(String[]::new);
     }
 
     @Override

@@ -51,6 +51,7 @@ public class LdaStormImpl {
         conf.put(RichSpoutBatchExecutor.MAX_BATCH_SIZE_CONF, LocalConfig.getInt("topology.batch.size", 100));
         conf.setNumWorkers(2);
 
+        // Before generating JAR to run in cluster, remember to change the RedisClient init in LDAAggregator
         if (args.length > 0) {
             run_in_cluster(args[0], conf);
         }

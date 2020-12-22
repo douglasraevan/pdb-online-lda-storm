@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>OnlineLdaStorm</groupId>
     <artifactId>OnlineLdaStorm</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.2.0-SNAPSHOT</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
@@ -26,7 +26,8 @@
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-core</artifactId>
             <version>2.2.0</version>
-            <scope>provided</scope>
+            <!-- Uncomment the line below to generate cluster jar -->
+<!--            <scope>provided</scope>-->
         </dependency>
 
         <dependency>
@@ -45,8 +46,7 @@
         <dependency>
             <groupId>jolda</groupId>
             <artifactId>jolda</artifactId>
-            <version>1.0-SNAPSHOT</version>
-<!--            <systemPath>${basedir}/lib/jolda-1.0-SNAPSHOT.jar</systemPath>-->
+            <version>1.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
@@ -139,9 +139,6 @@
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
-<!--                    <descriptors>-->
-<!--                        <descriptor>src/main/resources/exclude-storm.xml</descriptor>-->
-<!--                    </descriptors>-->
                     <archive>
                         <manifest>
                             <mainClass>gr.ntua.olda.LDAStorm.LdaStormImpl</mainClass>

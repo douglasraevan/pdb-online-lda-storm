@@ -1,8 +1,12 @@
 package gr.ntua.olda.utils;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import net.minidev.json.JSONObject;
 import org.apache.storm.trident.operation.ReducerAggregator;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.slf4j.Logger;
@@ -34,6 +38,8 @@ public class LDAAggregator implements ReducerAggregator<OnlineLDA> {
     // Redis client
     private RedisConnection<String, String> redis;
 
+    private Map<String, Integer> doubleBraceMap;
+
     @Override
     public OnlineLDA init() {
         OnlineLDA lda = null;
@@ -47,6 +53,13 @@ public class LDAAggregator implements ReducerAggregator<OnlineLDA> {
         try {
             logger.info("LDAAggregator: Initializing Values...");
             voc = new LDAVocabulary(LocalConfig.get("file.lda.dictionary.path"));
+
+            // Initialize HashMap
+            doubleBraceMap = new HashMap<String, Integer>();
+            for (String topic: voc.getStrings()) {
+                doubleBraceMap.put(topic, 0);
+            }
+
             lda = new OnlineLDA(voc.size(), K, D, alpha, eta, tau, kappa);
         } catch (IOException e) {
             e.printStackTrace();
@@ -61,17 +74,29 @@ public class LDAAggregator implements ReducerAggregator<OnlineLDA> {
             return curr;
 
         if (redis == null) {
-            RedisClient client = new RedisClient(LocalConfig.get("redis.server.cluster.address"),
-                    LocalConfig.getInt("redis.server.cluster.port", 6379));
+            // Local Mode
+            RedisClient client = new RedisClient(LocalConfig.get("redis.server.local.address"),
+                    LocalConfig.getInt("redis.server.local.port", 6379));
+
+//            // Cluster Mode
+//            RedisClient client = new RedisClient(LocalConfig.get("redis.server.cluster.address"),
+//                    LocalConfig.getInt("redis.server.cluster.port", 6379));
 
             redis = client.connect();
         }
 
-        // Didn't figure out why init is not called but lost my patience so fuck*that*initialization :(
+        // Didn't figure out why init is not called but lost my patience so ...
         if (voc == null) {
             try {
                 logger.info("LDAAggregator: Initializing Values...");
                 voc = new LDAVocabulary(LocalConfig.get("file.lda.dictionary.path"));
+
+                // Initialize HashMap
+                doubleBraceMap = new HashMap<String, Integer>();
+                for (String topic: voc.getStrings()) {
+                    doubleBraceMap.put(topic, 0);
+                }
+
                 OnlineLDA lda = new OnlineLDA(voc.size(), K, D, alpha, eta, tau, kappa);
                 return process_current_batch(lda, tuple);
             } catch (IOException e) {
@@ -92,14 +117,30 @@ public class LDAAggregator implements ReducerAggregator<OnlineLDA> {
 
             logger.info("LDAAggregator: Executing LDA algorithm");
             Result result = curr.workOn(documents);
-            logger.info(result.toString());
+            String resultString = result.toString();
+            logger.info(resultString);
 
-            redis.publish("TwitterLDAStream", result.toString());
+            countTweet(resultString);
+            System.out.println("hashmap : " +  doubleBraceMap);
+
+            JSONObject jsonObject = new JSONObject(doubleBraceMap);
+            redis.publish("TwitterLDAStream", String.valueOf(jsonObject));
 
         } catch (ArrayIndexOutOfBoundsException ex) {
             logger.error("LDAAggregator: Exception happened for docs size {} and exception error was {} ",
                     (docs != null ? docs.size() : 0), ex.getLocalizedMessage());
         }
         return curr;
+    }
+
+    private Map<String,Integer> countTweet(String resultString){
+        List<String> tupleList = Arrays.asList(resultString.split("\n"));
+        for(String tuple : tupleList){
+            String category = tuple.split(" ")[0].split("->")[0];
+            Integer oldValue = doubleBraceMap.get(category);
+            doubleBraceMap.replace(category, oldValue+1);
+        }
+        return doubleBraceMap;
+
     }
 }

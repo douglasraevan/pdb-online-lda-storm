@@ -66,4 +66,8 @@ public class LDAVocabulary implements Vocabulary {
         return strings.get(id);
     }
 
+    protected List<String> getStrings() {
+        return this.strings;
+    }
+
 }
