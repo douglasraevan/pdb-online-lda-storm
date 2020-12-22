@@ -44,11 +44,7 @@ public class LDAAggregator implements ReducerAggregator<OnlineLDA> {
     public OnlineLDA init() {
         OnlineLDA lda = null;
 
-        //Redis connection
-        RedisClient client = new RedisClient(LocalConfig.get("redis.server.local.address"),
-                LocalConfig.getInt("redis.server.local.port", 6379));
-
-        redis = client.connect();
+        redis = _getClient().connect();
 
         try {
             logger.info("LDAAggregator: Initializing Values...");
@@ -67,6 +63,18 @@ public class LDAAggregator implements ReducerAggregator<OnlineLDA> {
         return lda;
     }
 
+    private RedisClient _getClient() {
+        // Local Mode
+        RedisClient client = new RedisClient(LocalConfig.get("redis.server.local.address"),
+                LocalConfig.getInt("redis.server.local.port", 6379));
+
+//        // Cluster Mode
+//        RedisClient client = new RedisClient(LocalConfig.get("redis.server.cluster.address"),
+//                LocalConfig.getInt("redis.server.cluster.port", 6379));
+
+        return client;
+    }
+
 
     @Override
     public OnlineLDA reduce(OnlineLDA curr, TridentTuple tuple) {
@@ -74,15 +82,7 @@ public class LDAAggregator implements ReducerAggregator<OnlineLDA> {
             return curr;
 
         if (redis == null) {
-            // Local Mode
-            RedisClient client = new RedisClient(LocalConfig.get("redis.server.local.address"),
-                    LocalConfig.getInt("redis.server.local.port", 6379));
-
-//            // Cluster Mode
-//            RedisClient client = new RedisClient(LocalConfig.get("redis.server.cluster.address"),
-//                    LocalConfig.getInt("redis.server.cluster.port", 6379));
-
-            redis = client.connect();
+            redis = _getClient().connect();
         }
 
         // Didn't figure out why init is not called but lost my patience so ...
