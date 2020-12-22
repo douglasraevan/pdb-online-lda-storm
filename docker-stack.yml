@@ -1,0 +1,53 @@
+version: '3.1'
+
+services:
+  zookeeper:
+    image: zookeeper
+    container_name: demo-zookeeper-2
+    restart: always
+
+  nimbus:
+    image: storm
+    container_name: demo-nimbus-2
+    command: storm nimbus
+    depends_on:
+      - zookeeper
+    links:
+      - zookeeper
+    restart: always
+    ports:
+      - 6627:6627
+
+  redis:
+    image: redis
+    container_name: demo-redis-2
+    command: redis-server
+    restart: always
+    ports:
+      - 6379:6379
+
+  supervisor:
+    image: storm
+    container_name: demo-supervisor-2
+    command: storm supervisor
+    depends_on:
+      - nimbus
+      - zookeeper
+      - redis
+    links:
+      - nimbus
+      - zookeeper
+      - redis
+    restart: always
+  
+  storm-ui:
+    image: storm
+    container_name: demo-storm-ui-2
+    command: storm ui
+    depends_on:
+      - nimbus
+    links:
+      - nimbus
+    restart: always
+    ports:
+      - 8080:8080
