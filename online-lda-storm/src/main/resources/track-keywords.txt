@@ -9,3 +9,6 @@ film
 aktor
 penyanyi
 panggung
+pemerintah
+humor
+curhat

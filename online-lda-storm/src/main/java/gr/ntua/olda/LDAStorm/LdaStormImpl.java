@@ -52,6 +52,7 @@ public class LdaStormImpl {
         conf.setNumWorkers(2);
 
         // Before generating JAR to run in cluster, remember to change the RedisClient init in LDAAggregator
+        // Also uncomment the "scope provided" line for storm-core in pom.xml
         if (args.length > 0) {
             run_in_cluster(args[0], conf);
         }
